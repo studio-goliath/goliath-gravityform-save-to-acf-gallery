@@ -25,18 +25,34 @@ class GGravityformSaveToACFGallery
 
         foreach ( $upload_fields as $field_id => $post_meta){
 
+            // Pour les champs repeater avec plusieur sub_field
+            $array_repeater = explode( '[', $post_meta);
+            $sub_field = false;
+            if( $array_repeater && count( $array_repeater ) == 2 ){
+
+                $post_meta = $array_repeater[0];
+                $sub_field = str_replace( ']', '', $array_repeater[1] );
+            }
+
             $images_urls = json_decode( $entry[ $field_id ] );
 
-            $images_id = array();
+            $meta_value = array();
             foreach ( $images_urls as $image_url ){
 
-                $images_id[] = $this->create_image_id ($post_id, $image_url );
+                if( $sub_field ){
+
+                    $meta_value[][ $sub_field ] = $this->create_image_id ($post_id, $image_url );
+                } else {
+
+                    $meta_value[] = $this->create_image_id ($post_id, $image_url );
+                }
 
             }
 
-            if( $images_id ){
+            if( $meta_value ){
 
-                update_post_meta( $post_id, $post_meta, $images_id );
+                $meta_value = apply_filters( 'goliath_gravity_acf_gallery_value', $meta_value, $post_meta, $post_id );
+                update_field( $post_meta, $meta_value, $post_id);
             }
         }
 
